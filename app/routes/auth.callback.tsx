@@ -1,4 +1,4 @@
-import { OAuth2Client } from "google-auth-library";
+import { google } from "googleapis";
 import { redirect } from "@remix-run/node";
 
 export async function loader({ request }: { request: Request }) {
@@ -9,12 +9,13 @@ export async function loader({ request }: { request: Request }) {
     return redirect("/");
   }
 
-  const client = new OAuth2Client(
+  const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
     process.env.GOOGLE_REDIRECT_URI
   );
-  const { tokens } = await client.getToken(code);
+
+  const { tokens } = await oauth2Client.getToken(code);
   const accessToken = tokens.access_token;
 
   return redirect("/forms", {

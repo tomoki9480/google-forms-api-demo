@@ -1,5 +1,6 @@
 import { redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+import { google } from "googleapis";
 
 export async function loader({ request }: { request: Request }) {
   const accessToken = request.headers.get("Cookie")?.split("accessToken=")[1];
@@ -8,24 +9,19 @@ export async function loader({ request }: { request: Request }) {
     return redirect("/auth");
   }
 
+  const oauth2Client = new google.auth.OAuth2();
+  oauth2Client.setCredentials({ access_token: accessToken });
+
   const formId = process.env.GOOGLE_FORM_ID;
+  const forms = google.forms({ version: "v1", auth: oauth2Client });
+  
+  const res = await forms.forms.responses.list({ formId });
 
-  const res = await fetch(
-    `https://forms.googleapis.com/v1/forms/${formId}/responses`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
-
-  if (!res.ok) {
+  if (!res.data) {
     throw new Error("レスポンスの取得に失敗しました");
   }
 
-  const data = await res.json();
-
-  return data;
+  return res.data;
 }
 
 export default function Index() {
